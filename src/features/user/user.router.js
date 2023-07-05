@@ -88,37 +88,6 @@ app.get("/getall",async(req,res)=>{
 
 
 
-app.post("/login",async(req,res)=>{
-    const {email,password}=req.body
-    console.log(email,password)
-
-    try{
-       let user=await User.findOne({email})
-       //console.log(user)
-       if(user){
-        if(user.password===password){
-            const token=jwt.sign({id:user._id,name:user.name,age:user.age,role:user.role},"Secreate123",
-            {expiresIn:'12 day'}
-            )
-
-            const refreshtoken=jwt.sign({},"Secreaterefresh123",
-            {expiresIn:'13 days'})
-            res.send({message:'Login Successfull',token,refreshtoken,user})
-
-        }
-        else{
-            res.status(404).send({message:` Athentication failed incorrect password`})
-        }
-       }else{
-        res.status(404).send({message:`user with email ${email} not found`})
-
-       }
-
-    }catch(e){
-        res.send(e.message)
-    }
-    
-})
 
 
 
@@ -130,78 +99,50 @@ app.post("/login",async(req,res)=>{
 
 
 
-app.use((req,res,next)=>{
-    const token=req.headers.token
-    //const{email,password}=req.body
-      ///console.log("email",email,password)
-      if(!token){
-        res.send("missung token")
-      }
-      //const verification=jwt.verify(token,"Secreate123")
 
-      try{
-        const verification=jwt.verify(token,"Secreate123")
-console.log(verification);
-        if(verification.exp>new Date().getTime()){
-           // let user=await User.findById({"_id":id})
+// app.use((req,res,next)=>{
+//     const token=req.headers.token
+//     //const{email,password}=req.body
+//       ///console.log("email",email,password)
+//       if(!token){
+//         res.send("missung token")
+//       }
+//       //const verification=jwt.verify(token,"Secreate123")
 
-            res.send('token is expired')
+//       try{
+//         const verification=jwt.verify(token,"Secreate123")
+// console.log(verification);
+//         if(verification.exp>new Date().getTime()){
+//            // let user=await User.findById({"_id":id})
 
-        }
-        if(blacklist.includes(token)){
-            return res.send('token already used')
-               }
-               next()
+//             res.send('token is expired')
 
-  }catch(e){
-      res.send(e.message)
-  }
+//         }
+//         if(blacklist.includes(token)){
+//             return res.send('token already used')
+//                }
+//                next()
+
+//   }catch(e){
+//       res.send(e.message)
+//   }
   
-  })
+//   })
   //app.use(authMiddleware)
 
 
 
 
 
-  app.post("/logout",async(req,res)=>{
-    const token=req.headers.token
-blacklist.push(token)
-return res.send('user logged out sucessfully')
-})
-
-
-
-
-
-
-
-
-
-app.post("/refresh", async(req,res)=>{
-    let id=req.params
-   const refreshtoken=req.headers['refreshtoken']
-   if(!refreshtoken){
-    res.send("token not found")
-   }
-    //console.log(req.method,req.url)
-    //let product=db.products.find((products)=> products.id===num)
-const verification=jwt.verify(refreshtoken,"Secreaterefresh123")
-    try{
-        if(verification){
-           // let user=await User.findById({"_id":id})
-const newtoken=jwt.sign({id:verification.id,age:verification.age},'Secreate123',
-{expiresIn:'10 days'}
-)
-            res.send({token:newtoken})
-        }else{
-            res.send("user not found")
-        }
-    }catch(e){
-        res.send(e.message)
-    }
   
-    })
+
+
+
+
+
+
+
+
 
 
 
@@ -209,39 +150,34 @@ const newtoken=jwt.sign({id:verification.id,age:verification.age},'Secreate123',
 
     app.patch("/:id", async(req,res)=>{
         let id=req.params.id
-       
+        //const id=req.headers.id
+
   
-        const token=req.headers["token"]
   
         try{
-            
-            const decoded=jwt.decode(token)
-            console.log(decoded);
-    
-            
+            let user=await User.findOne({"EmpID":id})
 
-    if(decoded.role ==="admin"  ){
-        //let blog1=await Blog.findById({"_id":id});
-        //console.log("blog",blog1)
-        //if(decoded.id==blog1.author){
-            let user=await User.findByIdAndUpdate({"_id":id},{...req.body},{new:true})
+
+            //let user=await User.updateOne({"EmpID":id},{...req.body},{new:true})
 
             if(user){
-            res.send(user)
+                try {
+                let employee=await User.updateOne({"EmpID":id},{...req.body},{new:true})
+                if (employee) {
+                    res.send('employee updated')
+                } else {
+                    res.send('employee is not updated')
+
+                }
+
+                } catch (error) {
+                    res.send(error.message)
+
+                }
         }else{
-            res.send("user is not found to update")
+            res.send("employee is not found to update")
         }  
-      //}else{
-         // res.send(' cant update other writers blog')
-      //}
 
-    }
-else{
-return  res.status(403).send('not allowed to update blog')
-   
-//res.send(blog)
-
-}        
  }catch(e){
             res.send(e.message)
         }
@@ -249,7 +185,44 @@ return  res.status(403).send('not allowed to update blog')
       })
 
 
+      app.delete("/:id", async(req,res)=>{
+        let id=req.params.id
+       console.log("id",id);
+  
+       // const token=req.headers["token"]
+  
+        try{
+            
 
+    
+            // if(decoded.role ==="user" || decoded.role==="admin" ){
+                let user=await User.findOne({"EmpID":id})
+                //console.log("blog",blog1)
+                if(user){
+                  let emplyoee=await User.deleteOne({"EmpID":id});
+  
+                    if(emplyoee){
+                    res.send('employee deleted sucessfully')
+                }else{
+                    res.send("employee is not found to delete")
+                }  
+              }else{
+                  res.send('employee is not found ')
+              }
+    
+            // }
+    // else{
+    //   return  res.status(403).send('not allowed to delete blog')
+           
+    //   //res.send(blog)
+    
+    // }        
+    
+        }catch(e){
+            res.send('can not find blog by this id ')
+        }
+  
+      })
 
 
 
